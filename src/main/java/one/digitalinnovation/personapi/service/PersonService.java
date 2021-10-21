@@ -10,13 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class PersonService {
 
-    private PersonRepository personRepository;
+    private PersonRepository VerifyIfExists;
 
     private final PersonMapper personMapper  =  PersonMapper.INSTANCE;
 
@@ -24,14 +23,14 @@ public class PersonService {
     @Autowired
     public PersonService(PersonRepository personRepository) {
 
-        this.personRepository = personRepository;
+        this.VerifyIfExists = personRepository;
     }
 
     public MessageResponseDTO createPerson(PersonDTO personDTO){
          Person personToSave = personMapper.toModel(personDTO);
 
 
-        Person savedPerson = personRepository.save(personToSave);
+        Person savedPerson = VerifyIfExists.save(personToSave);
         return MessageResponseDTO
                 .builder()
                 .message("Create person with ID" + savedPerson.getId())
@@ -39,25 +38,24 @@ public class PersonService {
     }
 
     public List<PersonDTO> listAll() {
-        List<Person> allPeople = personRepository.findAll();
+        List<Person> allPeople = VerifyIfExists.findAll();
         return allPeople.stream()
                 .map(personMapper::toDTO)
                 .collect(Collectors.toList());
     }
+    public PersonDTO findById(Long id) throws PersonNotFoundException {
+            Person person = VerifyIfExists.findById(id)
+            .orElseThrow(() -> new PersonNotFoundException(id));
 
-        public PersonDTO findById(Long id) throws PersonNotFoundException {
-         Optional<Person> optionalPerson =  personRepository.findById(id);
-         if (optionalPerson.isEmpty()){
-             throw new PersonNotFoundException(id);
-         }
-
-         return personMapper.toDTO(optionalPerson.get());
-
+            return personMapper.toDTO(person);
         }
-    //public PersonDTO findById(Long id) throws PersonNotFoundException {
-       //Person person = personRepository.findById(id)
-               // .orElseThrow(() -> new PersonNotFoundException(id));
 
-               //return personMapper.toDTO(person);
-    //}
+
+
+    public void delete(Long id) throws PersonNotFoundException {
+          VerifyIfExists.findById(id)
+                  .orElseThrow(() -> new PersonNotFoundException(id));
+          VerifyIfExists.deleteById(id);
+    }
+
 }
